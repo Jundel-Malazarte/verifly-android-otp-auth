@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Verifly</string>
+    <string name="welcome_back">Welcome back,</string>
+    <string name="profile_information">Profile Information</string>
+    <string name="verified">Verified</string>
+    <string name="unverified">Unverified</string>
+    <string name="full_name">Full Name</string>
+    <string name="email_address">Email Address</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="not_provided">Not provided</string>
+    <string name="quick_actions">Quick Actions</string>
+    <string name="account_settings">Account Settings</string>
+    <string name="profile_and_preferences">Profile &amp; preferences</string>
+    <string name="security_and_otp">Security &amp; OTP</string>
+    <string name="two_fa_and_passwords">2FA &amp; Passwords</string>
+    <string name="recent_activity">Recent Activity</string>
+    <string name="login_history_and_logs">Login history &amp; logs</string>
+    <string name="notifications">Notifications</string>
+    <string name="alerts_and_updates">Alerts &amp; updates</string>
+    <string name="log_out">Log Out</string>
+</resources>
