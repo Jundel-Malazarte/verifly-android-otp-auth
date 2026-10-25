@@ -76,20 +76,39 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return result != -1;
     }
 
-    public synchronized boolean isIdentifierRegistered(String identifier) {
-        if (identifier == null || identifier.trim().isEmpty()) return false;
-        String cleaned = identifier.trim().toLowerCase();
+    public synchronized boolean isEmailRegistered(String email) {
+        if (email == null || email.trim().isEmpty()) return false;
+        String cleaned = email.trim().toLowerCase();
         SQLiteDatabase db = this.getReadableDatabase();
 
-        String selection = "LOWER(" + COLUMN_EMAIL + ") = ? OR " + COLUMN_PHONE_NUMBER + " = ?";
-        String[] selectionArgs = new String[]{cleaned, identifier.trim()};
-
-        Cursor cursor = db.query(TABLE_USERS, new String[]{COLUMN_ID}, selection, selectionArgs, null, null, null);
+        Cursor cursor = db.query(TABLE_USERS, new String[]{COLUMN_ID},
+                "LOWER(" + COLUMN_EMAIL + ") = ?",
+                new String[]{cleaned}, null, null, null);
         boolean exists = (cursor != null && cursor.getCount() > 0);
         if (cursor != null) {
             cursor.close();
         }
         return exists;
+    }
+
+    public synchronized boolean isPhoneRegistered(String phone) {
+        if (phone == null || phone.trim().isEmpty()) return false;
+        String cleaned = phone.trim();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        Cursor cursor = db.query(TABLE_USERS, new String[]{COLUMN_ID},
+                COLUMN_PHONE_NUMBER + " = ?",
+                new String[]{cleaned}, null, null, null);
+        boolean exists = (cursor != null && cursor.getCount() > 0);
+        if (cursor != null) {
+            cursor.close();
+        }
+        return exists;
+    }
+
+    public synchronized boolean isIdentifierRegistered(String identifier) {
+        if (identifier == null || identifier.trim().isEmpty()) return false;
+        return isEmailRegistered(identifier) || isPhoneRegistered(identifier);
     }
 
     @Nullable

@@ -47,6 +47,14 @@ public class LoginFragment extends Fragment {
             return;
         }
 
+        // Initialize target from pending target if available
+        if (authViewModel.getPendingOtpTarget() != null && !authViewModel.getPendingOtpTarget().isEmpty()) {
+            currentTarget = authViewModel.getPendingOtpTarget();
+            if (binding.etIdentifier.getText() == null || binding.etIdentifier.getText().toString().isEmpty()) {
+                binding.etIdentifier.setText(currentTarget);
+            }
+        }
+
         setupTextWatchers();
         setupClickListeners();
         observeViewModel();
@@ -101,6 +109,10 @@ public class LoginFragment extends Fragment {
             String otpCode = binding.etOtp.getText() != null ?
                     binding.etOtp.getText().toString().trim() : "";
 
+            if (currentTarget.isEmpty() && authViewModel.getPendingOtpTarget() != null) {
+                currentTarget = authViewModel.getPendingOtpTarget();
+            }
+
             if (otpCode.isEmpty() || otpCode.length() < 6) {
                 binding.tilOtp.setError("Please enter the 6-digit OTP code");
                 return;
@@ -112,6 +124,10 @@ public class LoginFragment extends Fragment {
 
         // Resend OTP
         binding.btnResendOtp.setOnClickListener(v -> {
+            if (currentTarget.isEmpty() && authViewModel.getPendingOtpTarget() != null) {
+                currentTarget = authViewModel.getPendingOtpTarget();
+            }
+
             if (!currentTarget.isEmpty()) {
                 binding.etOtp.setText("");
                 binding.tilOtp.setError(null);
@@ -123,6 +139,8 @@ public class LoginFragment extends Fragment {
 
         // Change Target (Email / Phone)
         binding.btnChangeTarget.setOnClickListener(v -> {
+            authViewModel.setPendingOtpTarget("");
+            currentTarget = "";
             showRequestOtpState();
         });
 
@@ -144,6 +162,9 @@ public class LoginFragment extends Fragment {
             if (event != null) {
                 String otp = event.getContentIfNotHandled();
                 if (otp != null && !otp.isEmpty()) {
+                    if (currentTarget.isEmpty()) {
+                        currentTarget = authViewModel.getPendingOtpTarget();
+                    }
                     showVerifyOtpState(currentTarget, otp);
                 }
             }
@@ -205,10 +226,19 @@ public class LoginFragment extends Fragment {
     }
 
     private void showVerifyOtpState(@NonNull String target, @NonNull String generatedOtp) {
+        if (target.isEmpty() && authViewModel.getPendingOtpTarget() != null) {
+            target = authViewModel.getPendingOtpTarget();
+            currentTarget = target;
+        }
+
         binding.layoutRequestOtp.setVisibility(View.GONE);
         binding.layoutVerifyOtp.setVisibility(View.VISIBLE);
         binding.tvOtpSentTo.setText("A 6-digit verification code was sent to " + target);
         binding.tilOtp.setError(null);
+
+        if (binding.etIdentifier.getText() == null || binding.etIdentifier.getText().toString().isEmpty()) {
+            binding.etIdentifier.setText(target);
+        }
 
         // Show test OTP code in Snackbar with Auto-Fill / Copy action
         Snackbar snackbar = Snackbar.make(binding.getRoot(),

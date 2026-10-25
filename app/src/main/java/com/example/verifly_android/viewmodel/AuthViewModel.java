@@ -9,10 +9,13 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.example.verifly_android.data.model.User;
 import com.example.verifly_android.data.repository.AuthRepository;
+import com.example.verifly_android.data.repository.AuthRepository.SignupResult;
 import com.example.verifly_android.util.Event;
 
 public class AuthViewModel extends AndroidViewModel {
     private final AuthRepository authRepository;
+
+    private String pendingOtpTarget = "";
 
     private final MutableLiveData<User> currentUserLiveData = new MutableLiveData<>();
     private final MutableLiveData<Event<String>> generatedOtpLiveData = new MutableLiveData<>();
@@ -25,6 +28,16 @@ public class AuthViewModel extends AndroidViewModel {
         super(application);
         this.authRepository = AuthRepository.getInstance(application);
         checkSession();
+    }
+
+    public String getPendingOtpTarget() {
+        return pendingOtpTarget;
+    }
+
+    public void setPendingOtpTarget(String target) {
+        if (target != null) {
+            this.pendingOtpTarget = target.trim();
+        }
     }
 
     public LiveData<User> getCurrentUserLiveData() {
@@ -61,24 +74,65 @@ public class AuthViewModel extends AndroidViewModel {
         }
     }
 
+    public static boolean isValidPassword(String password) {
+        if (password == null || password.length() < 8) {
+            return false;
+        }
+        boolean hasUpper = false;
+        boolean hasLower = false;
+        boolean hasDigit = false;
+        boolean hasSymbol = false;
+
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) {
+                hasUpper = true;
+            } else if (Character.isLowerCase(c)) {
+                hasLower = true;
+            } else if (Character.isDigit(c)) {
+                hasDigit = true;
+            } else {
+                hasSymbol = true;
+            }
+        }
+        return hasUpper && hasLower && hasDigit && hasSymbol;
+    }
+
     public void signUp(String fullName, String email, String phoneNumber, String password) {
         if (fullName == null || fullName.trim().isEmpty() ||
                 email == null || email.trim().isEmpty() ||
+                phoneNumber == null || phoneNumber.trim().isEmpty() ||
                 password == null || password.trim().isEmpty()) {
             authErrorLiveData.setValue(new Event<>("Please fill in all required fields."));
             authSuccessLiveData.setValue(new Event<>(false));
             return;
         }
 
-        boolean success = authRepository.signUp(fullName, email, phoneNumber, password);
-        if (success) {
-            currentUserLiveData.setValue(authRepository.getCurrentUser());
-            authSuccessLiveData.setValue(new Event<>(true));
-            // Do NOT set isLoggedIn to true yet so user can verify via OTP
-            isLoggedInLiveData.setValue(false);
-        } else {
-            authErrorLiveData.setValue(new Event<>("An account with this email or phone number already exists."));
+        if (!isValidPassword(password)) {
+            authErrorLiveData.setValue(new Event<>("PASSWORD_INVALID: Password must be at least 8 characters long and contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special symbol (e.g. Pass@1234)."));
             authSuccessLiveData.setValue(new Event<>(false));
+            return;
+        }
+
+        SignupResult result = authRepository.signUp(fullName, email, phoneNumber, password);
+        switch (result) {
+            case SUCCESS:
+                currentUserLiveData.setValue(authRepository.getCurrentUser());
+                authSuccessLiveData.setValue(new Event<>(true));
+                isLoggedInLiveData.setValue(false);
+                break;
+            case EMAIL_EXISTS:
+                authErrorLiveData.setValue(new Event<>("EMAIL_EXISTS: This email address is already registered. Please log in or use another email."));
+                authSuccessLiveData.setValue(new Event<>(false));
+                break;
+            case PHONE_EXISTS:
+                authErrorLiveData.setValue(new Event<>("PHONE_EXISTS: This phone number is already registered. Please log in or use another phone number."));
+                authSuccessLiveData.setValue(new Event<>(false));
+                break;
+            case FAILED:
+            default:
+                authErrorLiveData.setValue(new Event<>("Sign up failed. Please try again."));
+                authSuccessLiveData.setValue(new Event<>(false));
+                break;
         }
     }
 
@@ -90,13 +144,14 @@ public class AuthViewModel extends AndroidViewModel {
             return;
         }
 
-        if (!authRepository.isUserRegistered(identifier.trim())) {
+        String cleaned = identifier.trim();
+        if (!authRepository.isUserRegistered(cleaned)) {
             authErrorLiveData.setValue(new Event<>("This account is not registered. Please sign up first."));
             authSuccessLiveData.setValue(new Event<>(false));
             return;
         }
 
-        boolean success = authRepository.login(identifier, password);
+        boolean success = authRepository.login(cleaned, password);
         if (success) {
             currentUserLiveData.setValue(authRepository.getCurrentUser());
             authSuccessLiveData.setValue(new Event<>(true));
@@ -114,6 +169,8 @@ public class AuthViewModel extends AndroidViewModel {
         }
 
         String cleaned = target.trim();
+        this.pendingOtpTarget = cleaned;
+
         if (!authRepository.isUserRegistered(cleaned)) {
             authErrorLiveData.setValue(new Event<>("This email or phone number is not registered. Please sign up first."));
             return;
@@ -128,20 +185,21 @@ public class AuthViewModel extends AndroidViewModel {
     }
 
     public void verifyOtp(String target, String code) {
-        if (target == null || target.trim().isEmpty() || code == null || code.trim().isEmpty()) {
+        String effectiveTarget = (target != null && !target.trim().isEmpty()) ? target.trim() : pendingOtpTarget;
+
+        if (effectiveTarget.isEmpty() || code == null || code.trim().isEmpty()) {
             otpVerificationResultLiveData.setValue(new Event<>(false));
             authErrorLiveData.setValue(new Event<>("Invalid OTP input."));
             return;
         }
 
-        String cleaned = target.trim();
-        if (!authRepository.isUserRegistered(cleaned)) {
+        if (!authRepository.isUserRegistered(effectiveTarget)) {
             otpVerificationResultLiveData.setValue(new Event<>(false));
             authErrorLiveData.setValue(new Event<>("This email or phone number is not registered. Please sign up first."));
             return;
         }
 
-        boolean isVerified = authRepository.verifyOtp(cleaned, code);
+        boolean isVerified = authRepository.verifyOtp(effectiveTarget, code);
         otpVerificationResultLiveData.setValue(new Event<>(isVerified));
 
         if (isVerified) {
@@ -154,6 +212,7 @@ public class AuthViewModel extends AndroidViewModel {
 
     public void logout() {
         authRepository.logout();
+        pendingOtpTarget = "";
         currentUserLiveData.setValue(null);
         isLoggedInLiveData.setValue(false);
     }

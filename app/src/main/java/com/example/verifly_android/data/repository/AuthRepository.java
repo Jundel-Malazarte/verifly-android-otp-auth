@@ -18,6 +18,13 @@ public class AuthRepository {
     private static final String KEY_IS_LOGGED_IN = "is_logged_in";
     private static final String KEY_USER_ID = "user_id";
 
+    public enum SignupResult {
+        SUCCESS,
+        EMAIL_EXISTS,
+        PHONE_EXISTS,
+        FAILED
+    }
+
     private static AuthRepository instance;
     private final SharedPreferences prefs;
     private final DatabaseHelper dbHelper;
@@ -48,6 +55,16 @@ public class AuthRepository {
         }
     }
 
+    public synchronized boolean isEmailRegistered(String email) {
+        if (email == null || email.trim().isEmpty()) return false;
+        return dbHelper.isEmailRegistered(email.trim().toLowerCase());
+    }
+
+    public synchronized boolean isPhoneRegistered(String phone) {
+        if (phone == null || phone.trim().isEmpty()) return false;
+        return dbHelper.isPhoneRegistered(phone.trim());
+    }
+
     public synchronized boolean isUserRegistered(String identifier) {
         if (identifier == null || identifier.trim().isEmpty()) {
             return false;
@@ -61,23 +78,33 @@ public class AuthRepository {
             return null;
         }
 
-        String cleanedTarget = target.trim();
-        // Check if user is registered before generating OTP
-        if (!isUserRegistered(cleanedTarget)) {
+        String cleanedTarget = target.trim().toLowerCase();
+        User user = dbHelper.getUserByEmailOrPhone(cleanedTarget);
+        if (user == null) {
             return null;
         }
 
         Random random = new Random();
         int otp = 100000 + random.nextInt(900000); // 6-digit OTP
         String otpStr = String.valueOf(otp);
-        pendingOtps.put(cleanedTarget.toLowerCase(), otpStr);
+
+        // Store OTP associated with target, user's email, and user's phone
+        pendingOtps.put(cleanedTarget, otpStr);
+        if (user.getEmail() != null && !user.getEmail().trim().isEmpty()) {
+            pendingOtps.put(user.getEmail().trim().toLowerCase(), otpStr);
+        }
+        if (user.getPhoneNumber() != null && !user.getPhoneNumber().trim().isEmpty()) {
+            pendingOtps.put(user.getPhoneNumber().trim().toLowerCase(), otpStr);
+        }
         return otpStr;
     }
 
     public synchronized boolean verifyOtp(String target, String otpCode) {
-        if (target == null || otpCode == null) return false;
-        String cleanedTarget = target.trim();
-        String storedOtp = pendingOtps.get(cleanedTarget.toLowerCase());
+        if (target == null || target.trim().isEmpty() || otpCode == null || otpCode.trim().isEmpty()) {
+            return false;
+        }
+        String cleanedTarget = target.trim().toLowerCase();
+        String storedOtp = pendingOtps.get(cleanedTarget);
 
         if (storedOtp != null && storedOtp.equals(otpCode.trim())) {
             User user = dbHelper.getUserByEmailOrPhone(cleanedTarget);
@@ -86,7 +113,15 @@ public class AuthRepository {
                 return false;
             }
 
-            pendingOtps.remove(cleanedTarget.toLowerCase());
+            // Clear pending OTP entries
+            pendingOtps.remove(cleanedTarget);
+            if (user.getEmail() != null) {
+                pendingOtps.remove(user.getEmail().trim().toLowerCase());
+            }
+            if (user.getPhoneNumber() != null) {
+                pendingOtps.remove(user.getPhoneNumber().trim().toLowerCase());
+            }
+
             user.setVerified(true);
             dbHelper.updateUserVerification(user.getId(), true);
 
@@ -97,12 +132,15 @@ public class AuthRepository {
         return false;
     }
 
-    public synchronized boolean signUp(String fullName, String email, String phoneNumber, String password) {
-        String cleanEmail = email != null ? email.trim() : "";
+    public synchronized SignupResult signUp(String fullName, String email, String phoneNumber, String password) {
+        String cleanEmail = email != null ? email.trim().toLowerCase() : "";
         String cleanPhone = phoneNumber != null ? phoneNumber.trim() : "";
 
-        if (isUserRegistered(cleanEmail) || (!cleanPhone.isEmpty() && isUserRegistered(cleanPhone))) {
-            return false; // User already exists
+        if (!cleanEmail.isEmpty() && isEmailRegistered(cleanEmail)) {
+            return SignupResult.EMAIL_EXISTS;
+        }
+        if (!cleanPhone.isEmpty() && isPhoneRegistered(cleanPhone)) {
+            return SignupResult.PHONE_EXISTS;
         }
 
         String id = UUID.randomUUID().toString();
@@ -111,9 +149,9 @@ public class AuthRepository {
         boolean inserted = dbHelper.insertUser(user);
         if (inserted) {
             this.currentUser = user;
-            return true;
+            return SignupResult.SUCCESS;
         }
-        return false;
+        return SignupResult.FAILED;
     }
 
     public synchronized boolean login(String identifier, String password) {

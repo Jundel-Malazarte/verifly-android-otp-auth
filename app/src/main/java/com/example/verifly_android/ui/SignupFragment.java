@@ -99,16 +99,16 @@ public class SignupFragment extends Fragment {
         if (phone.isEmpty()) {
             binding.tilPhone.setError("Phone Number is required");
             isValid = false;
-        } else if (phone.length() < 7) {
-            binding.tilPhone.setError("Please enter a valid phone number");
+        } else if (phone.replaceAll("[^0-9]", "").length() < 7) {
+            binding.tilPhone.setError("Please enter a valid phone number (at least 7 digits)");
             isValid = false;
         }
 
         if (password.isEmpty()) {
             binding.tilPassword.setError("Password is required");
             isValid = false;
-        } else if (password.length() < 6) {
-            binding.tilPassword.setError("Password must be at least 6 characters");
+        } else if (!AuthViewModel.isValidPassword(password)) {
+            binding.tilPassword.setError("Password must be at least 8 characters long with uppercase, lowercase, number, and symbol (e.g. Pass@1234)");
             isValid = false;
         }
 
@@ -133,10 +133,13 @@ public class SignupFragment extends Fragment {
                     Toast.makeText(requireContext(), "Account created successfully!", Toast.LENGTH_SHORT).show();
 
                     String email = binding.etEmail.getText() != null ? binding.etEmail.getText().toString().trim() : "";
+                    String phone = binding.etPhone.getText() != null ? binding.etPhone.getText().toString().trim() : "";
+                    String target = !email.isEmpty() ? email : phone;
 
-                    // Request OTP for the newly created user
-                    if (!email.isEmpty()) {
-                        authViewModel.requestOtp(email);
+                    // Set target & request OTP for newly created user
+                    if (!target.isEmpty()) {
+                        authViewModel.setPendingOtpTarget(target);
+                        authViewModel.requestOtp(target);
                     }
 
                     navigateToLogin();
@@ -148,10 +151,18 @@ public class SignupFragment extends Fragment {
             if (event != null) {
                 String error = event.getContentIfNotHandled();
                 if (error != null && !error.isEmpty()) {
-                    if (error.contains("email") || error.contains("exists")) {
-                        binding.tilEmail.setError(error);
+                    if (error.startsWith("EMAIL_EXISTS:")) {
+                        String msg = error.substring("EMAIL_EXISTS:".length()).trim();
+                        binding.tilEmail.setError(msg);
+                    } else if (error.startsWith("PHONE_EXISTS:")) {
+                        String msg = error.substring("PHONE_EXISTS:".length()).trim();
+                        binding.tilPhone.setError(msg);
+                    } else if (error.startsWith("PASSWORD_INVALID:")) {
+                        String msg = error.substring("PASSWORD_INVALID:".length()).trim();
+                        binding.tilPassword.setError(msg);
+                    } else {
+                        Snackbar.make(binding.getRoot(), error, Snackbar.LENGTH_LONG).show();
                     }
-                    Snackbar.make(binding.getRoot(), error, Snackbar.LENGTH_LONG).show();
                 }
             }
         });
