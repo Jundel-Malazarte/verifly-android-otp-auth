@@ -15,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
 import com.example.verifly_android.R;
@@ -39,6 +40,12 @@ public class LoginFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         authViewModel = new ViewModelProvider(requireActivity()).get(AuthViewModel.class);
+
+        // Check if already logged in
+        if (Boolean.TRUE.equals(authViewModel.getIsLoggedInLiveData().getValue())) {
+            navigateToDashboard();
+            return;
+        }
 
         setupTextWatchers();
         setupClickListeners();
@@ -116,52 +123,77 @@ public class LoginFragment extends Fragment {
 
         // Change Target (Email / Phone)
         binding.btnChangeTarget.setOnClickListener(v -> {
-            authViewModel.clearOtpSentState();
             showRequestOtpState();
         });
 
         // Navigate to Signup
         binding.btnGoToSignup.setOnClickListener(v -> {
-            Navigation.findNavController(v).navigate(R.id.action_loginFragment_to_signupFragment);
+            if (getView() != null) {
+                NavController navController = Navigation.findNavController(getView());
+                if (navController.getCurrentDestination() != null &&
+                        navController.getCurrentDestination().getId() == R.id.loginFragment) {
+                    navController.navigate(R.id.action_loginFragment_to_signupFragment);
+                }
+            }
         });
     }
 
     private void observeViewModel() {
-        // Observe Generated OTP (otpSentState)
-        authViewModel.getOtpSentState().observe(getViewLifecycleOwner(), otp -> {
-            if (otp != null && !otp.isEmpty()) {
-                showVerifyOtpState(currentTarget, otp);
+        // Observe Generated OTP
+        authViewModel.getOtpSentState().observe(getViewLifecycleOwner(), event -> {
+            if (event != null) {
+                String otp = event.getContentIfNotHandled();
+                if (otp != null && !otp.isEmpty()) {
+                    showVerifyOtpState(currentTarget, otp);
+                }
             }
         });
 
-        // Observe OTP Verification Result (authResultState)
-        authViewModel.getAuthResultState().observe(getViewLifecycleOwner(), success -> {
-            if (Boolean.TRUE.equals(success)) {
-                Toast.makeText(requireContext(), "Verification Successful!", Toast.LENGTH_SHORT).show();
-                if (getView() != null) {
-                    Navigation.findNavController(getView()).navigate(R.id.action_loginFragment_to_dashboardFragment);
+        // Observe OTP Verification Result
+        authViewModel.getAuthResultState().observe(getViewLifecycleOwner(), event -> {
+            if (event != null) {
+                Boolean success = event.getContentIfNotHandled();
+                if (Boolean.TRUE.equals(success)) {
+                    Toast.makeText(requireContext(), "Verification Successful!", Toast.LENGTH_SHORT).show();
+                    navigateToDashboard();
                 }
             }
         });
 
         // Observe Auth Success
-        authViewModel.getAuthSuccessLiveData().observe(getViewLifecycleOwner(), success -> {
-            if (Boolean.TRUE.equals(success) && getView() != null) {
-                Navigation.findNavController(getView()).navigate(R.id.action_loginFragment_to_dashboardFragment);
+        authViewModel.getAuthSuccessLiveData().observe(getViewLifecycleOwner(), event -> {
+            if (event != null) {
+                Boolean success = event.getContentIfNotHandled();
+                if (Boolean.TRUE.equals(success)) {
+                    navigateToDashboard();
+                }
             }
         });
 
         // Observe Error Messages
-        authViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
-            if (error != null && !error.isEmpty()) {
-                if (binding.layoutVerifyOtp.getVisibility() == View.VISIBLE) {
-                    binding.tilOtp.setError(error);
-                } else {
-                    binding.tilIdentifier.setError(error);
+        authViewModel.getErrorMessage().observe(getViewLifecycleOwner(), event -> {
+            if (event != null) {
+                String error = event.getContentIfNotHandled();
+                if (error != null && !error.isEmpty()) {
+                    if (binding.layoutVerifyOtp.getVisibility() == View.VISIBLE) {
+                        binding.tilOtp.setError(error);
+                    } else {
+                        binding.tilIdentifier.setError(error);
+                    }
+                    Snackbar.make(binding.getRoot(), error, Snackbar.LENGTH_LONG).show();
                 }
-                Snackbar.make(binding.getRoot(), error, Snackbar.LENGTH_LONG).show();
             }
         });
+    }
+
+    private void navigateToDashboard() {
+        if (getView() != null) {
+            NavController navController = Navigation.findNavController(getView());
+            if (navController.getCurrentDestination() != null &&
+                    navController.getCurrentDestination().getId() == R.id.loginFragment) {
+                navController.navigate(R.id.action_loginFragment_to_dashboardFragment);
+            }
+        }
     }
 
     private void showRequestOtpState() {

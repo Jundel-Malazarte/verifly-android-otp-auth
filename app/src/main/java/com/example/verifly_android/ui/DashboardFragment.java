@@ -6,10 +6,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
 import com.example.verifly_android.R;
@@ -34,8 +36,19 @@ public class DashboardFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         authViewModel = new ViewModelProvider(requireActivity()).get(AuthViewModel.class);
 
+        setupBackPressedCallback();
         observeViewModel();
         setupClickListeners();
+    }
+
+    private void setupBackPressedCallback() {
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                // Exit app cleanly on back press from Dashboard instead of navigating back to login
+                requireActivity().finish();
+            }
+        });
     }
 
     private void observeViewModel() {
@@ -93,7 +106,13 @@ public class DashboardFragment extends Fragment {
 
     private void handleLogout(View view) {
         authViewModel.logout();
-        Navigation.findNavController(view).navigate(R.id.action_dashboardFragment_to_loginFragment);
+        if (getView() != null) {
+            NavController navController = Navigation.findNavController(getView());
+            if (navController.getCurrentDestination() != null &&
+                    navController.getCurrentDestination().getId() == R.id.dashboardFragment) {
+                navController.navigate(R.id.action_dashboardFragment_to_loginFragment);
+            }
+        }
     }
 
     @Override

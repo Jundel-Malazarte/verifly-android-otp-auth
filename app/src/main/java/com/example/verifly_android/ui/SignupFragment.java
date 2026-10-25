@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
 import com.example.verifly_android.R;
@@ -70,9 +71,7 @@ public class SignupFragment extends Fragment {
     private void setupClickListeners() {
         binding.btnSignup.setOnClickListener(v -> attemptSignup());
 
-        binding.btnGoToLogin.setOnClickListener(v -> {
-            Navigation.findNavController(v).navigate(R.id.action_signupFragment_to_loginFragment);
-        });
+        binding.btnGoToLogin.setOnClickListener(v -> navigateToLogin());
     }
 
     private void attemptSignup() {
@@ -127,26 +126,45 @@ public class SignupFragment extends Fragment {
     }
 
     private void observeViewModel() {
-        authViewModel.getAuthSuccessLiveData().observe(getViewLifecycleOwner(), success -> {
-            if (Boolean.TRUE.equals(success)) {
-                Toast.makeText(requireContext(), "Account created successfully!", Toast.LENGTH_SHORT).show();
+        authViewModel.getAuthSuccessLiveData().observe(getViewLifecycleOwner(), event -> {
+            if (event != null) {
+                Boolean success = event.getContentIfNotHandled();
+                if (Boolean.TRUE.equals(success)) {
+                    Toast.makeText(requireContext(), "Account created successfully!", Toast.LENGTH_SHORT).show();
 
-                String email = binding.etEmail.getText() != null ? binding.etEmail.getText().toString().trim() : "";
-                if (!email.isEmpty()) {
-                    authViewModel.requestOtp(email);
-                }
+                    String email = binding.etEmail.getText() != null ? binding.etEmail.getText().toString().trim() : "";
 
-                if (getView() != null) {
-                    Navigation.findNavController(getView()).navigate(R.id.action_signupFragment_to_loginFragment);
+                    // Request OTP for the newly created user
+                    if (!email.isEmpty()) {
+                        authViewModel.requestOtp(email);
+                    }
+
+                    navigateToLogin();
                 }
             }
         });
 
-        authViewModel.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
-            if (error != null && !error.isEmpty()) {
-                Snackbar.make(binding.getRoot(), error, Snackbar.LENGTH_LONG).show();
+        authViewModel.getErrorMessage().observe(getViewLifecycleOwner(), event -> {
+            if (event != null) {
+                String error = event.getContentIfNotHandled();
+                if (error != null && !error.isEmpty()) {
+                    if (error.contains("email") || error.contains("exists")) {
+                        binding.tilEmail.setError(error);
+                    }
+                    Snackbar.make(binding.getRoot(), error, Snackbar.LENGTH_LONG).show();
+                }
             }
         });
+    }
+
+    private void navigateToLogin() {
+        if (getView() != null) {
+            NavController navController = Navigation.findNavController(getView());
+            if (navController.getCurrentDestination() != null &&
+                    navController.getCurrentDestination().getId() == R.id.signupFragment) {
+                navController.navigate(R.id.action_signupFragment_to_loginFragment);
+            }
+        }
     }
 
     @Override
