@@ -53,6 +53,7 @@ public class SignupFragment extends Fragment {
                 binding.tilFullName.setError(null);
                 binding.tilEmail.setError(null);
                 binding.tilPhone.setError(null);
+                binding.tilAddress.setError(null);
                 binding.tilPassword.setError(null);
                 binding.tilConfirmPassword.setError(null);
             }
@@ -64,6 +65,7 @@ public class SignupFragment extends Fragment {
         binding.etFullName.addTextChangedListener(clearErrorWatcher);
         binding.etEmail.addTextChangedListener(clearErrorWatcher);
         binding.etPhone.addTextChangedListener(clearErrorWatcher);
+        binding.etAddress.addTextChangedListener(clearErrorWatcher);
         binding.etPassword.addTextChangedListener(clearErrorWatcher);
         binding.etConfirmPassword.addTextChangedListener(clearErrorWatcher);
     }
@@ -78,6 +80,7 @@ public class SignupFragment extends Fragment {
         String fullName = binding.etFullName.getText() != null ? binding.etFullName.getText().toString().trim() : "";
         String email = binding.etEmail.getText() != null ? binding.etEmail.getText().toString().trim() : "";
         String phone = binding.etPhone.getText() != null ? binding.etPhone.getText().toString().trim() : "";
+        String address = binding.etAddress.getText() != null ? binding.etAddress.getText().toString().trim() : "";
         String password = binding.etPassword.getText() != null ? binding.etPassword.getText().toString().trim() : "";
         String confirmPassword = binding.etConfirmPassword.getText() != null ? binding.etConfirmPassword.getText().toString().trim() : "";
 
@@ -121,7 +124,7 @@ public class SignupFragment extends Fragment {
         }
 
         if (isValid) {
-            authViewModel.signUp(fullName, email, phone, password);
+            authViewModel.signUp(fullName, email, phone, address, password);
         }
     }
 

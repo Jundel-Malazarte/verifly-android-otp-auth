@@ -6,9 +6,13 @@ import android.content.SharedPreferences;
 import androidx.annotation.Nullable;
 
 import com.example.verifly_android.data.db.DatabaseHelper;
+import com.example.verifly_android.data.model.ChecklistItem;
+import com.example.verifly_android.data.model.Customer;
 import com.example.verifly_android.data.model.User;
+import com.example.verifly_android.data.remote.SupabaseClient;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
@@ -28,6 +32,7 @@ public class AuthRepository {
     private static AuthRepository instance;
     private final SharedPreferences prefs;
     private final DatabaseHelper dbHelper;
+    private final SupabaseClient supabaseClient;
     private final Map<String, String> pendingOtps = new HashMap<>();
     private User currentUser;
 
@@ -35,6 +40,7 @@ public class AuthRepository {
         Context appContext = context.getApplicationContext();
         this.prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         this.dbHelper = DatabaseHelper.getInstance(appContext);
+        this.supabaseClient = SupabaseClient.getInstance(appContext);
         loadSessionFromPrefs();
     }
 
@@ -125,6 +131,9 @@ public class AuthRepository {
             user.setVerified(true);
             dbHelper.updateUserVerification(user.getId(), true);
 
+            // Sync verified user to Supabase cloud
+            supabaseClient.syncUser(user, null);
+
             this.currentUser = user;
             saveSession(user);
             return true;
@@ -132,7 +141,7 @@ public class AuthRepository {
         return false;
     }
 
-    public synchronized SignupResult signUp(String fullName, String email, String phoneNumber, String password) {
+    public synchronized SignupResult signUp(String fullName, String email, String phoneNumber, String address, String password) {
         String cleanEmail = email != null ? email.trim().toLowerCase() : "";
         String cleanPhone = phoneNumber != null ? phoneNumber.trim() : "";
 
@@ -144,11 +153,13 @@ public class AuthRepository {
         }
 
         String id = UUID.randomUUID().toString();
-        User user = new User(id, fullName.trim(), cleanEmail, cleanPhone, password, false, System.currentTimeMillis());
+        User user = new User(id, fullName.trim(), cleanEmail, cleanPhone, address != null ? address.trim() : "", password, false, System.currentTimeMillis());
 
         boolean inserted = dbHelper.insertUser(user);
         if (inserted) {
             this.currentUser = user;
+            // Sync user to Supabase cloud asynchronously
+            supabaseClient.syncUser(user, null);
             return SignupResult.SUCCESS;
         }
         return SignupResult.FAILED;
@@ -178,6 +189,57 @@ public class AuthRepository {
 
     public synchronized User getCurrentUser() {
         return currentUser;
+    }
+
+    public synchronized List<User> getAllRegisteredUsers() {
+        return dbHelper.getAllUsers();
+    }
+
+    // --- CUSTOMERS ---
+
+    public synchronized boolean addCustomer(Customer customer) {
+        if (customer == null) return false;
+        boolean result = dbHelper.insertCustomer(customer);
+        if (result) {
+            supabaseClient.syncCustomer(customer, null);
+        }
+        return result;
+    }
+
+    public synchronized List<Customer> getAllCustomers() {
+        return dbHelper.getAllCustomers();
+    }
+
+    // --- CHECKLIST ---
+
+    public synchronized boolean addChecklistItem(ChecklistItem item) {
+        if (item == null) return false;
+        boolean result = dbHelper.insertChecklistItem(item);
+        if (result) {
+            supabaseClient.syncChecklistItem(item, null);
+        }
+        return result;
+    }
+
+    public synchronized boolean updateChecklistItemCompletion(String id, boolean isCompleted) {
+        boolean result = dbHelper.updateChecklistItemCompletion(id, isCompleted);
+        if (result) {
+            for (ChecklistItem item : dbHelper.getAllChecklistItems()) {
+                if (item.getId().equals(id)) {
+                    supabaseClient.syncChecklistItem(item, null);
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+    public synchronized List<ChecklistItem> getAllChecklistItems() {
+        return dbHelper.getAllChecklistItems();
+    }
+
+    public SupabaseClient getSupabaseClient() {
+        return supabaseClient;
     }
 
     private void saveSession(User user) {

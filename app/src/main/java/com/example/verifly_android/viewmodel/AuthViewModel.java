@@ -7,10 +7,15 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.example.verifly_android.data.model.ChecklistItem;
+import com.example.verifly_android.data.model.Customer;
 import com.example.verifly_android.data.model.User;
+import com.example.verifly_android.data.remote.SupabaseClient;
 import com.example.verifly_android.data.repository.AuthRepository;
 import com.example.verifly_android.data.repository.AuthRepository.SignupResult;
 import com.example.verifly_android.util.Event;
+
+import java.util.List;
 
 public class AuthViewModel extends AndroidViewModel {
     private final AuthRepository authRepository;
@@ -23,6 +28,10 @@ public class AuthViewModel extends AndroidViewModel {
     private final MutableLiveData<Event<String>> authErrorLiveData = new MutableLiveData<>();
     private final MutableLiveData<Event<Boolean>> authSuccessLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoggedInLiveData = new MutableLiveData<>();
+
+    private final MutableLiveData<List<Customer>> customersLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<ChecklistItem>> checklistLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<User>> registeredUsersLiveData = new MutableLiveData<>();
 
     public AuthViewModel(@NonNull Application application) {
         super(application);
@@ -64,6 +73,18 @@ public class AuthViewModel extends AndroidViewModel {
         return isLoggedInLiveData;
     }
 
+    public LiveData<List<Customer>> getCustomersLiveData() {
+        return customersLiveData;
+    }
+
+    public LiveData<List<ChecklistItem>> getChecklistLiveData() {
+        return checklistLiveData;
+    }
+
+    public LiveData<List<User>> getRegisteredUsersLiveData() {
+        return registeredUsersLiveData;
+    }
+
     public void checkSession() {
         boolean loggedIn = authRepository.isLoggedIn();
         isLoggedInLiveData.setValue(loggedIn);
@@ -97,7 +118,7 @@ public class AuthViewModel extends AndroidViewModel {
         return hasUpper && hasLower && hasDigit && hasSymbol;
     }
 
-    public void signUp(String fullName, String email, String phoneNumber, String password) {
+    public void signUp(String fullName, String email, String phoneNumber, String address, String password) {
         if (fullName == null || fullName.trim().isEmpty() ||
                 email == null || email.trim().isEmpty() ||
                 phoneNumber == null || phoneNumber.trim().isEmpty() ||
@@ -113,7 +134,7 @@ public class AuthViewModel extends AndroidViewModel {
             return;
         }
 
-        SignupResult result = authRepository.signUp(fullName, email, phoneNumber, password);
+        SignupResult result = authRepository.signUp(fullName, email, phoneNumber, address, password);
         switch (result) {
             case SUCCESS:
                 currentUserLiveData.setValue(authRepository.getCurrentUser());
@@ -208,6 +229,58 @@ public class AuthViewModel extends AndroidViewModel {
         } else {
             authErrorLiveData.setValue(new Event<>("Incorrect OTP code. Please try again."));
         }
+    }
+
+    // --- CUSTOMERS, CHECKLIST & REGISTERED USERS ---
+
+    public void loadCustomers() {
+        customersLiveData.setValue(authRepository.getAllCustomers());
+    }
+
+    public boolean addCustomer(String name, String email, String phone, String address, String notes) {
+        if (name == null || name.trim().isEmpty()) {
+            authErrorLiveData.setValue(new Event<>("Customer name is required"));
+            return false;
+        }
+        Customer customer = new Customer(name.trim(), email != null ? email.trim() : "", phone != null ? phone.trim() : "", address != null ? address.trim() : "", notes != null ? notes.trim() : "");
+        boolean success = authRepository.addCustomer(customer);
+        if (success) {
+            loadCustomers();
+        }
+        return success;
+    }
+
+    public void loadChecklist() {
+        checklistLiveData.setValue(authRepository.getAllChecklistItems());
+    }
+
+    public boolean addChecklistItem(String title, String category) {
+        if (title == null || title.trim().isEmpty()) {
+            return false;
+        }
+        ChecklistItem item = new ChecklistItem(title.trim(), category != null ? category.trim() : "General");
+        boolean success = authRepository.addChecklistItem(item);
+        if (success) {
+            loadChecklist();
+        }
+        return success;
+    }
+
+    public void toggleChecklistItem(String id, boolean isCompleted) {
+        authRepository.updateChecklistItemCompletion(id, isCompleted);
+        loadChecklist();
+    }
+
+    public void loadRegisteredUsers() {
+        registeredUsersLiveData.setValue(authRepository.getAllRegisteredUsers());
+    }
+
+    public SupabaseClient getSupabaseClient() {
+        return authRepository.getSupabaseClient();
+    }
+
+    public void saveSupabaseConfig(String url, String key) {
+        authRepository.getSupabaseClient().saveConfig(url, key);
     }
 
     public void logout() {

@@ -62,7 +62,7 @@
             android:id="@+id/card_user_profile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="20dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
             app:strokeWidth="1dp"
@@ -228,15 +228,33 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Quick Actions Header -->
-        <TextView
-            android:layout_width="wrap_content"
+        <!-- Quick Actions Header & Supabase Config Button -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/quick_actions"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            android:textStyle="bold"
-            android:textColor="?android:attr/textColorPrimary"
-            android:layout_marginBottom="12dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/quick_actions"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textStyle="bold"
+                android:textColor="?android:attr/textColorPrimary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_supabase_config"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Supabase Cloud"
+                app:icon="@drawable/ic_settings"
+                android:textSize="12sp" />
+
+        </LinearLayout>
 
         <!-- Quick Action Grid (2x2) -->
         <GridLayout
@@ -291,9 +309,9 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Card 2: Security & OTP -->
+            <!-- Card 2: Add Customer -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_security_otp"
+                android:id="@+id/card_add_customer"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_columnWeight="1"
@@ -313,111 +331,111 @@
                     <ImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
+                        android:src="@drawable/ic_person"
+                        app:tint="?attr/colorPrimary"
+                        android:layout_marginBottom="8dp"
+                        android:importantForAccessibility="no" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Add Customer"
+                        android:textAppearance="?attr/textAppearanceLabelLarge"
+                        android:textStyle="bold"
+                        android:textColor="?android:attr/textColorPrimary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Create &amp; sync customers"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?android:attr/textColorSecondary" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card 3: Customer List -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_customer_list"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:clickable="true"
+                android:focusable="true"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="1dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="?attr/colorOutlineVariant">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="111dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginBottom="8dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_verified"
+                        app:tint="?attr/colorPrimary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Customer List"
+                        android:textAppearance="?attr/textAppearanceLabelLarge"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="View &amp; manage customers"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?android:attr/textColorSecondary" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card 4: Registered Users -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_registered_users"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:clickable="true"
+                android:focusable="true"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="1dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="?attr/colorOutlineVariant">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginBottom="8dp"
+                        android:importantForAccessibility="no"
                         android:src="@drawable/ic_security"
-                        app:tint="?attr/colorPrimary"
-                        android:layout_marginBottom="8dp"
-                        android:importantForAccessibility="no" />
+                        app:tint="?attr/colorPrimary" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/security_and_otp"
+                        android:text="Registered Users"
                         android:textAppearance="?attr/textAppearanceLabelLarge"
-                        android:textStyle="bold"
-                        android:textColor="?android:attr/textColorPrimary" />
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textStyle="bold" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/two_fa_and_passwords"
-                        android:textAppearance="?attr/textAppearanceBodySmall"
-                        android:textColor="?android:attr/textColorSecondary" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Card 3: Recent Activity -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_recent_activity"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_columnWeight="1"
-                android:clickable="true"
-                android:focusable="true"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="1dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOutlineVariant">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:src="@drawable/ic_history"
-                        app:tint="?attr/colorPrimary"
-                        android:layout_marginBottom="8dp"
-                        android:importantForAccessibility="no" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/recent_activity"
-                        android:textAppearance="?attr/textAppearanceLabelLarge"
-                        android:textStyle="bold"
-                        android:textColor="?android:attr/textColorPrimary" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/login_history_and_logs"
-                        android:textAppearance="?attr/textAppearanceBodySmall"
-                        android:textColor="?android:attr/textColorSecondary" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Card 4: Notifications -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_notifications"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_columnWeight="1"
-                android:clickable="true"
-                android:focusable="true"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="1dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOutlineVariant">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <ImageView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:src="@drawable/ic_notifications"
-                        app:tint="?attr/colorPrimary"
-                        android:layout_marginBottom="8dp"
-                        android:importantForAccessibility="no" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/notifications"
-                        android:textAppearance="?attr/textAppearanceLabelLarge"
-                        android:textStyle="bold"
-                        android:textColor="?android:attr/textColorPrimary" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/alerts_and_updates"
+                        android:text="View all accounts"
                         android:textAppearance="?attr/textAppearanceBodySmall"
                         android:textColor="?android:attr/textColorSecondary" />
                 </LinearLayout>

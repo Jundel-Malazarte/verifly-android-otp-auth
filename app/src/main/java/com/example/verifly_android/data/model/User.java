@@ -8,6 +8,7 @@ public class User implements Serializable {
     private String fullName;
     private String email;
     private String phoneNumber;
+    private String address;
     private String password;
     private boolean isVerified;
     private long createdAt;
@@ -15,20 +16,22 @@ public class User implements Serializable {
     public User() {
     }
 
-    public User(String id, String fullName, String email, String phoneNumber, String password, boolean isVerified, long createdAt) {
+    public User(String id, String fullName, String email, String phoneNumber, String address, String password, boolean isVerified, long createdAt) {
         this.id = id;
         this.fullName = fullName;
         this.email = email;
         this.phoneNumber = phoneNumber;
+        this.address = address;
         this.password = password;
         this.isVerified = isVerified;
         this.createdAt = createdAt;
     }
 
-    public User(String fullName, String email, String phoneNumber, String password) {
+    public User(String fullName, String email, String phoneNumber, String address, String password) {
         this.fullName = fullName;
         this.email = email;
         this.phoneNumber = phoneNumber;
+        this.address = address;
         this.password = password;
         this.isVerified = false;
         this.createdAt = System.currentTimeMillis();
@@ -64,6 +67,14 @@ public class User implements Serializable {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     public String getPassword() {
@@ -111,6 +122,7 @@ public class User implements Serializable {
                 ", fullName='" + fullName + '\'' +
                 ", email='" + email + '\'' +
                 ", phoneNumber='" + phoneNumber + '\'' +
+                ", address='" + address + '\'' +
                 ", isVerified=" + isVerified +
                 ", createdAt=" + createdAt +
                 '}';
