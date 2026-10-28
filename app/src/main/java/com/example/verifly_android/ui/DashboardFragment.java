@@ -268,6 +268,7 @@ public class DashboardFragment extends Fragment {
 
         dialogBinding.etSupabaseUrl.setText(client.getSupabaseUrl());
         dialogBinding.etSupabaseKey.setText(client.getSupabaseKey());
+        dialogBinding.etConnString.setText(client.getConnectionString());
 
         dialogBinding.btnCopySqlSchema.setOnClickListener(v -> {
             String sqlSchema = "-- SUPABASE SQL SCHEMA FOR VERIFLY-ANDROID --\n\n" +
@@ -312,8 +313,9 @@ public class DashboardFragment extends Fragment {
                 .setPositiveButton("Save Credentials", (dialog, which) -> {
                     String url = dialogBinding.etSupabaseUrl.getText() != null ? dialogBinding.etSupabaseUrl.getText().toString().trim() : "";
                     String key = dialogBinding.etSupabaseKey.getText() != null ? dialogBinding.etSupabaseKey.getText().toString().trim() : "";
+                    String connStr = dialogBinding.etConnString.getText() != null ? dialogBinding.etConnString.getText().toString().trim() : "";
 
-                    authViewModel.saveSupabaseConfig(url, key);
+                    authViewModel.saveSupabaseConfig(url, key, connStr);
                     Toast.makeText(requireContext(), "Supabase Cloud configuration saved!", Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton("Cancel", null)

@@ -1,9 +1,28 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.devtools.ksp)
     alias(libs.plugins.jetbrains.kotlin.plugin.serialization)
 }
+
+val localProperties = Properties()
+
+val envFile = rootProject.file(".env")
+if (envFile.exists()) {
+    envFile.inputStream().use { localProperties.load(it) }
+}
+
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
+
+val supabaseUrl = localProperties.getProperty("SUPABASE_URL") ?: ""
+val supabaseAnonKey = localProperties.getProperty("SUPABASE_ANON_KEY") ?: ""
+val supabaseSecretKey = localProperties.getProperty("SUPABASE_SECRET_KEY") ?: ""
+val supabaseConnString = localProperties.getProperty("SUPABASE_CONN_STRING") ?: ""
 
 android {
     namespace = "com.example.verifly_android"
@@ -19,6 +38,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
+        buildConfigField("String", "SUPABASE_SECRET_KEY", "\"$supabaseSecretKey\"")
+        buildConfigField("String", "SUPABASE_CONN_STRING", "\"$supabaseConnString\"")
     }
 
     buildTypes {
@@ -36,6 +60,7 @@ android {
     buildFeatures {
         compose = true
         viewBinding = true
+        buildConfig = true
     }
 }
 

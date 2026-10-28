@@ -242,6 +242,14 @@ public class AuthRepository {
         return supabaseClient;
     }
 
+    public void fetchCustomersFromCloud(SupabaseClient.FetchCustomersCallback callback) {
+        supabaseClient.fetchCustomers(callback);
+    }
+
+    public void fetchUsersFromCloud(SupabaseClient.FetchUsersCallback callback) {
+        supabaseClient.fetchUsers(callback);
+    }
+
     private void saveSession(User user) {
         if (user == null) return;
         prefs.edit()

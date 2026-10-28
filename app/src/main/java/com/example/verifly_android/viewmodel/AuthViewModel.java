@@ -235,6 +235,11 @@ public class AuthViewModel extends AndroidViewModel {
 
     public void loadCustomers() {
         customersLiveData.setValue(authRepository.getAllCustomers());
+        authRepository.fetchCustomersFromCloud((success, fetched, message) -> {
+            if (success) {
+                customersLiveData.postValue(authRepository.getAllCustomers());
+            }
+        });
     }
 
     public boolean addCustomer(String name, String email, String phone, String address, String notes) {
@@ -273,14 +278,20 @@ public class AuthViewModel extends AndroidViewModel {
 
     public void loadRegisteredUsers() {
         registeredUsersLiveData.setValue(authRepository.getAllRegisteredUsers());
+        authRepository.fetchUsersFromCloud((success, fetched, message) -> {
+            if (success) {
+                registeredUsersLiveData.postValue(authRepository.getAllRegisteredUsers());
+            }
+        });
     }
 
     public SupabaseClient getSupabaseClient() {
         return authRepository.getSupabaseClient();
     }
 
-    public void saveSupabaseConfig(String url, String key) {
+    public void saveSupabaseConfig(String url, String key, String connString) {
         authRepository.getSupabaseClient().saveConfig(url, key);
+        authRepository.getSupabaseClient().saveConnectionString(connString);
     }
 
     public void logout() {
